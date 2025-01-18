@@ -71,23 +71,31 @@ class ProductController extends Controller
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-
+    
         $request->validate([
             'product_id' => 'required|unique:products,product_id,' . $id,
             'name' => 'required',
             'price' => 'required|numeric',
             'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
-
+    
         if ($request->hasFile('image')) {
+            // Delete the old image
+            if ($product->image && \Storage::exists('public/' . $product->image)) {
+                \Storage::delete('public/' . $product->image);
+            }
+    
+            // Store the new image
             $imagePath = $request->file('image')->store('images', 'public');
             $product->image = $imagePath;
         }
-
+    
+        // Update other product details
         $product->update($request->only(['product_id', 'name', 'description', 'price', 'stock']));
-
+    
         return redirect()->route('products.index')->with('success', 'Product updated successfully!');
     }
+
 
     public function destroy($id)
     {
